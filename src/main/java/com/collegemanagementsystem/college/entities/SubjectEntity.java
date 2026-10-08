@@ -1,26 +1,42 @@
 package com.collegemanagementsystem.college.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.util.List;
-import lombok.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
-@Setter
 @Getter
-@ToString
-@AllArgsConstructor
+@Setter
 @NoArgsConstructor
+@Table(uniqueConstraints = {@UniqueConstraint(columnNames = {"subjectTitle"})})
 public class SubjectEntity {
   @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "subject_id_seq")
+  @SequenceGenerator(
+      name = "subject_id_seq",
+      sequenceName = "subject_id_seq",
+      initialValue = 101,
+      allocationSize = 1)
   private Long subjectId;
 
-  private String title;
+  private String subjectTitle;
 
-  @ManyToOne
-  @JoinColumn(name = "professor_subject")
-  private ProfessorEntity professor;
+  @ManyToMany(mappedBy = "subjectList")
+  @JsonIgnore
+  private List<StudentEntity> student;
 
-  @ManyToMany(mappedBy = "subjectEntityList")
-  private List<StudentEntity> studentEntityList;
+  @ManyToMany
+  @JsonIgnore
+  @JoinTable(
+      name = "subject_professor",
+      joinColumns = @JoinColumn(name = "subject_id"),
+      inverseJoinColumns = @JoinColumn(name = "professor_id"),
+      uniqueConstraints =
+          @UniqueConstraint(
+              name = "uk_subject_professor",
+              columnNames = {"subject_id", "professor_id"}))
+  private List<ProfessorEntity> professorList;
 }

@@ -1,22 +1,24 @@
 package com.collegemanagementsystem.college.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
-@Setter
 @Getter
-@ToString
-@AllArgsConstructor
+@Setter
 @NoArgsConstructor
 public class AdmissionRecordEntity {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  private Long admissionRecordId;
+  private Long admissionId;
 
-  private Integer fees;
+  private Long fees;
 
   @OneToOne
-  @JoinColumn(nullable = false, name = "student_admission_record", unique = true)
+  @JoinColumn(name = "student_id", unique = true, nullable = false)
+  @JsonIgnore
   private StudentEntity student;
 }

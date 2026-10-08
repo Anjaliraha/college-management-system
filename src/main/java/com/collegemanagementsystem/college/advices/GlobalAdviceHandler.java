@@ -10,10 +10,11 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
 
 @RestControllerAdvice
 public class GlobalAdviceHandler implements ResponseBodyAdvice<Object> {
+
   @Override
   public boolean supports(
       MethodParameter returnType, Class<? extends HttpMessageConverter<?>> converterType) {
-    return false;
+    return true;
   }
 
   @Override
@@ -24,6 +25,7 @@ public class GlobalAdviceHandler implements ResponseBodyAdvice<Object> {
       Class<? extends HttpMessageConverter<?>> selectedConverterType,
       ServerHttpRequest request,
       ServerHttpResponse response) {
-    return null;
+    if (body instanceof ApiResponse<?>) return body;
+    return new ApiResponse<>(body);
   }
 }

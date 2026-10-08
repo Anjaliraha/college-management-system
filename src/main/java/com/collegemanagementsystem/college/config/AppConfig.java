@@ -8,7 +8,7 @@ import org.springframework.context.annotation.Configuration;
 public class AppConfig {
 
   @Bean
-  public ModelMapper createModelMapperInstance() {
+  public ModelMapper getModelMapper() {
     return new ModelMapper();
   }
 }

@@ -2,5 +2,7 @@ package com.collegemanagementsystem.college.repository;
 
 import com.collegemanagementsystem.college.entities.StudentEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
-public interface StudentRepository extends JpaRepository<StudentEntity, Long> {}
+@Repository
+public interface StudentEntityRepository extends JpaRepository<StudentEntity, Long> {}

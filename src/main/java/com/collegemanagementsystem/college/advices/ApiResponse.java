@@ -2,19 +2,21 @@ package com.collegemanagementsystem.college.advices;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import java.time.LocalDateTime;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
-@Data
+@Getter
+@Setter
 public class ApiResponse<T> {
+
+  @JsonFormat(pattern = "dd-MM-yyyy HH:mm:ss")
+  private LocalDateTime timestamp;
+
   private T data;
-
-  @JsonFormat(pattern = "hh:mm:ss dd-MM-yyyy")
-  private LocalDateTime localDateTime;
-
   private ApiError apiError;
 
-  public ApiResponse(LocalDateTime localDateTime) {
-    this.localDateTime = localDateTime.now();
+  public ApiResponse() {
+    timestamp = LocalDateTime.now();
   }
 
   public ApiResponse(T data) {
@@ -22,8 +24,8 @@ public class ApiResponse<T> {
     this.data = data;
   }
 
-  public ApiResponse(ApiError apiError) {
+  public ApiResponse(ApiError error) {
     this();
-    this.apiError = apiError;
+    this.apiError = error;
   }
 }

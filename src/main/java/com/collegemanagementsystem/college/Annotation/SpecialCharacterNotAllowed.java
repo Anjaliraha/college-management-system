@@ -15,10 +15,9 @@ import java.lang.annotation.Target;
 @Target({METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE})
 @Retention(RUNTIME)
 @Documented
-@Constraint(validatedBy = {NameValidator.class})
-public @interface NameValidation {
-
-  String message() default "This field cannot be blank";
+@Constraint(validatedBy = {SpecialCharacterValidator.class})
+public @interface SpecialCharacterNotAllowed {
+  String message() default "Special character are not also allowed";
 
   Class<?>[] groups() default {};
 
