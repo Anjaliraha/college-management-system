@@ -1,6 +1,7 @@
 package com.collegemanagementsystem.college.dto;
 
 import com.collegemanagementsystem.college.Annotation.SpecialCharacterNotAllowed;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.util.List;
@@ -18,7 +19,9 @@ public class StudentDto {
   @SpecialCharacterNotAllowed
   private String studentName;
 
+  @NotEmpty(message = "At least one subject is required")
   private List<SubjectDto> subjectList;
+
   private List<ProfessorDto> professorList;
   private AdmissionRecordDto admissionRecord;
 }

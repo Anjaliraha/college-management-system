@@ -1,6 +1,7 @@
 package com.collegemanagementsystem.college.entities;
 
 import jakarta.persistence.*;
+import java.util.ArrayList;
 import java.util.List;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -41,4 +42,20 @@ public class StudentEntity {
 
   @OneToOne(mappedBy = "student", cascade = CascadeType.ALL)
   private AdmissionRecordEntity admissionRecord;
+
+  public void addSubject(SubjectEntity subjectEntity) {
+    if (subjectEntity == null) return;
+    if (this.subjectList == null) subjectList = new ArrayList<>();
+    if (!this.subjectList.contains(subjectEntity)) this.subjectList.add(subjectEntity);
+    if (subjectEntity.getStudent() == null) subjectEntity.setStudent(new ArrayList<>());
+    if (!subjectEntity.getStudent().contains(this)) subjectEntity.getStudent().add(this);
+  }
+
+  public void addProfessor(ProfessorEntity professor) {
+    if (professor == null) return;
+    if (this.professorList == null) professorList = new ArrayList<>();
+    if (!this.professorList.contains(professor)) this.professorList.add(professor);
+    if (professor.getStudentList() == null) professor.setStudentList(new ArrayList<>());
+    if (!professor.getStudentList().contains(this)) professor.getStudentList().add(this);
+  }
 }

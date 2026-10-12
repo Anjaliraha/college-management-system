@@ -1,5 +1,6 @@
 package com.collegemanagementsystem.college.advices;
 
+import com.collegemanagementsystem.college.exception.DuplicateFoundException;
 import com.collegemanagementsystem.college.exception.ResourceNotFoundException;
 import java.util.List;
 import org.springframework.http.HttpStatus;
@@ -45,6 +46,40 @@ public class GlobalExceptionHandler {
         ApiError.builder()
             .httpStatus(HttpStatus.INTERNAL_SERVER_ERROR)
             .error("Some Internal Server Failure Happened")
+            .subError(List.of())
+            .build();
+    return buildApiResponse(apiError);
+  }
+
+  @ExceptionHandler(NullPointerException.class)
+  public ResponseEntity<ApiResponse<?>> handleNullPointerException(NullPointerException ex) {
+    ApiError apiError =
+        ApiError.builder()
+            .httpStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+            .error("Null Pointer Exception Happened")
+            .subError(List.of())
+            .build();
+    return buildApiResponse(apiError);
+  }
+
+  @ExceptionHandler(DuplicateFoundException.class)
+  public ResponseEntity<ApiResponse<?>> handleDuplicateFounException(DuplicateFoundException ex) {
+    ApiError apiError =
+        ApiError.builder()
+            .httpStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+            .error("Duplicate is present in the list")
+            .subError(List.of())
+            .build();
+    return buildApiResponse(apiError);
+  }
+
+  @ExceptionHandler(IllegalArgumentException.class)
+  public ResponseEntity<ApiResponse<?>> handleIllegalArgumentException(
+      IllegalArgumentException ex) {
+    ApiError apiError =
+        ApiError.builder()
+            .httpStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+            .error(ex.getMessage())
             .subError(List.of())
             .build();
     return buildApiResponse(apiError);

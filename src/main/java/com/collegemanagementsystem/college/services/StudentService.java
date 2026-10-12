@@ -1,21 +1,25 @@
 package com.collegemanagementsystem.college.services;
 
+import com.collegemanagementsystem.college.dto.ProfessorDto;
 import com.collegemanagementsystem.college.dto.StudentDto;
 import com.collegemanagementsystem.college.dto.SubjectDto;
 import com.collegemanagementsystem.college.entities.AdmissionRecordEntity;
 import com.collegemanagementsystem.college.entities.ProfessorEntity;
 import com.collegemanagementsystem.college.entities.StudentEntity;
 import com.collegemanagementsystem.college.entities.SubjectEntity;
+import com.collegemanagementsystem.college.exception.DuplicateFoundException;
 import com.collegemanagementsystem.college.exception.ResourceNotFoundException;
 import com.collegemanagementsystem.college.repository.AdmissionRecordEntityRepository;
 import com.collegemanagementsystem.college.repository.ProfessorEntityRepository;
 import com.collegemanagementsystem.college.repository.StudentEntityRepository;
 import com.collegemanagementsystem.college.repository.SubjectEntityRepository;
+import com.collegemanagementsystem.college.requestDto.UpdateStudentRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.common.util.StringUtils;
 import jakarta.transaction.Transactional;
 import java.util.*;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Service;
@@ -70,12 +74,21 @@ public class StudentService {
   public StudentDto createStudent(StudentDto studentDto) {
     // Convert the incoming DTO into an Entity because
     // the repository works with StudentEntity.
-    StudentEntity studentEntity = verifySubjectAndProfessorList(studentDto);
-    AdmissionRecordEntity admissionRecordEntity = studentEntity.getAdmissionRecord();
-    if (admissionRecordEntity == null || StringUtils.isEmpty(admissionRecordEntity.toString())) {
-      admissionRecordEntity = new AdmissionRecordEntity();
-      admissionRecordEntity.setFees(FEES);
-    }
+
+    List<Long> requestSubjectIds =
+            studentDto.getSubjectList().stream().map(SubjectDto::getSubjectId).toList();
+
+
+    List<Long> requestProfessorIds =
+            studentDto.getProfessorList() == null
+                    ? List.of()
+                    : studentDto.getProfessorList().stream().map(ProfessorDto::getProfessorId).toList();
+
+    StudentEntity studentEntity = verifySubjectAndProfessorList(studentDto.getStudentName(),requestSubjectIds,requestProfessorIds);
+
+    AdmissionRecordEntity admissionRecordEntity = new AdmissionRecordEntity();
+    admissionRecordEntity.setFees(FEES);
+
     admissionRecordEntity.setStudent(studentEntity);
     studentEntity.setAdmissionRecord(admissionRecordEntity);
     // Save the entity into the database.
@@ -87,7 +100,7 @@ public class StudentService {
   }
 
   @Transactional
-  public StudentDto updateStudent(StudentDto studentDto, Long id) {
+  public StudentDto updateStudent(UpdateStudentRequest studentDto, Long id) {
 
     // First, find the existing student in the database.
     // If the student does not exist, throw an exception.
@@ -99,18 +112,30 @@ public class StudentService {
                     new ResourceNotFoundException(
                         "student with this id " + id + " does not exist"));
 
-    StudentEntity verifiedEntity = verifySubjectAndProfessorList(studentDto);
+    List<Long> requestSubjectIds =
+            studentDto.getSubjectList().stream().map(SubjectDto::getSubjectId).toList();
+
+
+    List<Long> requestProfessorIds =
+            studentDto.getProfessorList() == null
+                    ? List.of()
+                    : studentDto.getProfessorList().stream().map(ProfessorDto::getProfessorId).toList();
+
+    StudentEntity verifiedEntity = verifySubjectAndProfessorList(studentDto.getStudentName(),requestSubjectIds,requestProfessorIds);
     // Copy the values from the DTO into the existing Entity.
     // Since this is a full update, the DTO represents the
     // complete set of values that should be updated.
-    modelMapper.map(studentDto, studentEntity);
-    studentEntity.setStudentId(id);
+    studentEntity.setProfessorList(verifiedEntity.getProfessorList());
+    studentEntity.setSubjectList(verifiedEntity.getSubjectList());
+    studentEntity.setAdmissionRecord(studentEntity.getAdmissionRecord());
+    studentEntity.setStudentName(verifiedEntity.getStudentName());
 
-    // Save the updated Entity back to the database.
-    StudentEntity savedStudent = studentEntityRepository.save(studentEntity);
+
+    // modelMapper.map(studentDto, studentEntity);
+    // studentEntity.setStudentId(id);
 
     // Convert the saved Entity into a DTO and return it.
-    return modelMapper.map(savedStudent, StudentDto.class);
+    return modelMapper.map(studentEntity, StudentDto.class);
   }
 
   /**
@@ -242,22 +267,42 @@ public class StudentService {
     }
   }
 
+  public void checkDuplicate(int requestListSize, int uniqueIdSize) {
+    if (requestListSize != uniqueIdSize) {
+      throw new DuplicateFoundException("Duplicate id is present");
+    }
+  }
+
   @Transactional
-  public StudentEntity verifySubjectAndProfessorList(StudentDto studentDto) {
-    List<Long> requestSubjectIds =
-        studentDto.getSubjectList().stream().map(s -> s.getSubjectId()).toList();
+  public StudentEntity verifySubjectAndProfessorList(String studentName,List<Long> requestSubjectIds,List<Long> requestProfessorIds) {
 
-    List<Long> requestProfessorIds =
-        studentDto.getProfessorList().stream().map(s -> s.getProfessorId()).toList();
+    if (requestSubjectIds.contains(null))
+      throw new IllegalArgumentException("Subject ID cannot be null");
 
-    StudentEntity studentEntity = modelMapper.map(studentDto, StudentEntity.class);
+    Set<Long> uniqueIds = new HashSet<>(requestSubjectIds);
+    checkDuplicate(requestSubjectIds.size(), uniqueIds.size());
 
+    if (requestProfessorIds.contains(null))
+      throw new IllegalArgumentException("Professor ID cannot be null");
+
+    Set<Long> uniqueProfIds = new HashSet<>(requestProfessorIds);
+    checkDuplicate(requestProfessorIds.size(), uniqueProfIds.size());
+
+    StudentEntity studentEntity = new StudentEntity();
+
+    studentEntity.setSubjectList(new ArrayList<>());
+    studentEntity.setProfessorList(new ArrayList<>());
+  studentEntity.setStudentName(studentName);
     List<SubjectEntity> subjectEntityList =
         fetchAllorThrowError(
             requestSubjectIds,
             subjectEntityRepository,
             SubjectEntity::getSubjectId,
             "SubjectEntity");
+
+    for (SubjectEntity subject : subjectEntityList) {
+      studentEntity.addSubject(subject);
+    }
     List<ProfessorEntity> professorEntityList =
         fetchAllorThrowError(
             requestProfessorIds,
@@ -265,18 +310,18 @@ public class StudentService {
             ProfessorEntity::getProfessorId,
             "ProfessorEntity");
 
-    studentEntity.setSubjectList(subjectEntityList);
-    studentEntity.setProfessorList(professorEntityList);
-
+    for (ProfessorEntity professor : professorEntityList) {
+      studentEntity.addProfessor(professor);
+    }
     return studentEntity;
   }
 
   public List<SubjectDto> getAllSubject() {
 
     List<SubjectEntity> subjectEntityList = subjectEntityRepository.findAll();
-    List<SubjectDto> subjectEntities =
+    List<SubjectDto> subjectDtoList =
         subjectEntityList.stream().map(s -> modelMapper.map(s, SubjectDto.class)).toList();
-    return subjectEntities;
+    return subjectDtoList;
   }
 
   //  @Transactional
@@ -342,7 +387,7 @@ public class StudentService {
     }
 
     List<E> found = jpaRepository.findAllById(requestIds);
-    List<Long> existing = found.stream().map(getterMethod).toList();
+    Set<Long> existing = found.stream().map(getterMethod).collect(Collectors.toSet());
     List<Long> missing = requestIds.stream().filter(s -> !existing.contains(s)).toList();
     if (!missing.isEmpty()) {
       throw new ResourceNotFoundException(entityName + " does not exist with ids " + missing);

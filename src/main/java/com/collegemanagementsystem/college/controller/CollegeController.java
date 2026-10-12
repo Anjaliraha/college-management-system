@@ -2,6 +2,7 @@ package com.collegemanagementsystem.college.controller;
 
 import com.collegemanagementsystem.college.dto.StudentDto;
 import com.collegemanagementsystem.college.dto.SubjectDto;
+import com.collegemanagementsystem.college.requestDto.UpdateStudentRequest;
 import com.collegemanagementsystem.college.services.StudentService;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -47,7 +48,7 @@ public class CollegeController {
 
   @PutMapping("/student/{id}")
   public ResponseEntity<StudentDto> updateStudent(
-      @RequestBody @Valid StudentDto studentDto, @PathVariable Long id) {
+          @RequestBody @Valid UpdateStudentRequest studentDto, @PathVariable Long id) {
     return ResponseEntity.ok(collegeService.updateStudent(studentDto, id));
   }
 
